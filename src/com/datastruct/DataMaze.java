@@ -1,5 +1,5 @@
 package com.datastruct;
 
-public class Panel {
+public class DataMaze {
     
 }
