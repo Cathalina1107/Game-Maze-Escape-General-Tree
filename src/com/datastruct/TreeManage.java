@@ -1,54 +1,142 @@
 package com.datastruct;
 
+import java.awt.Rectangle;
+import java.util.*;
+
 public class TreeManage {
-    private TreeNode root;
 
-    public TreeManage() {
-        root = new TreeNode("START", NodeType.START);
-        TreeNode cabang1 = new TreeNode("CABANG 1", NodeType.AREA);
-        TreeNode cabang2 = new TreeNode("CABANG 2", NodeType.AREA);
-        TreeNode cabang3 = new TreeNode("CABANG 3", NodeType.AREA);
-        TreeNode cabang4 = new TreeNode("CABANG 4", NodeType.AREA);
-        
-        root.addChild(cabang1);
-        root.addChild(cabang2);
-        root.addChild(cabang3);
-        root.addChild(cabang4);
+    public static ArrayList<TreeNode> cariJalanTercepat(
+            int startX,
+            int startY,
+            int size,
+            ArrayList<Rectangle> walls,
+            ArrayList<Rectangle> enemies,
+            Rectangle exit
+    ) {
+        Queue<TreeNode> queue = new LinkedList<>();
+        HashSet<String> visited = new HashSet<>();
 
-        cabang1.addChild(new TreeNode("COIN 1", NodeType.COIN));
-        cabang1.addChild(new TreeNode("COIN 2", NodeType.COIN));
-        cabang1.addChild(new TreeNode("COIN 3", NodeType.COIN));
-        cabang1.addChild(new TreeNode("COIN 4", NodeType.COIN));
-        cabang1.addChild(new TreeNode("COIN 5", NodeType.COIN));
+        TreeNode root = new TreeNode(startX, startY, "START", null);
 
-        cabang2.addChild(new TreeNode("COIN 1", NodeType.COIN));
-        cabang2.addChild(new TreeNode("COIN 2", NodeType.COIN));
-        cabang2.addChild(new TreeNode("COIN 3", NodeType.COIN));
-        cabang2.addChild(new TreeNode("COIN 4", NodeType.COIN));
-        cabang2.addChild(new TreeNode("COIN 5", NodeType.COIN));
+        queue.add(root);
+        visited.add(startX + "," + startY);
 
-        cabang3.addChild(new TreeNode("COIN 1", NodeType.COIN));
-        cabang3.addChild(new TreeNode("COIN 2", NodeType.COIN));
-        cabang3.addChild(new TreeNode("COIN 3", NodeType.COIN));
-        cabang3.addChild(new TreeNode("COIN 4", NodeType.COIN));
-        cabang3.addChild(new TreeNode("COIN 5", NodeType.COIN));
+        int step = 10;
 
-        cabang4.addChild(new TreeNode("COIN 1", NodeType.COIN));
-        cabang4.addChild(new TreeNode("COIN 2", NodeType.COIN));
-        cabang4.addChild(new TreeNode("COIN 3", NodeType.COIN));
-        cabang4.addChild(new TreeNode("COIN 4", NodeType.COIN));
-        cabang4.addChild(new TreeNode("COIN 5", NodeType.COIN));
+        int[][] gerak = {
+                {0, -step},   // ATAS
+                {0, step},    // BAWAH
+                {-step, 0},   // KIRI
+                {step, 0}     // KANAN
+        };
 
-        cabang1.addChild(new TreeNode("MONSTER 1", NodeType.MONSTER));
-        cabang2.addChild(new TreeNode("MONSTER 2", NodeType.MONSTER));
-        cabang3.addChild(new TreeNode("MONSTER 3", NodeType.MONSTER));
-        cabang4.addChild(new TreeNode("MONSTER 4", NodeType.MONSTER));
+        String[] namaArah = {
+                "ATAS",
+                "BAWAH",
+                "KIRI",
+                "KANAN"
+        };
 
-        TreeNode Exit = new TreeNode("EXIT", NodeType.AREA);
-        cabang2.addChild(Exit);
+        while (!queue.isEmpty()) {
+            TreeNode current = queue.poll();
+
+            Rectangle player = new Rectangle(current.x, current.y, size, size);
+
+            if (player.intersects(exit)) {
+                return ambilPath(current);
+            }
+
+            for (int i = 0; i < gerak.length; i++) {
+                int nx = current.x + gerak[i][0];
+                int ny = current.y + gerak[i][1];
+
+                String key = nx + "," + ny;
+
+                if (!visited.contains(key)
+                        && bisaLewat(nx, ny, size, walls, enemies)) {
+
+                    TreeNode child = new TreeNode(
+                            nx,
+                            ny,
+                            namaArah[i],
+                            current
+                    );
+
+                    current.addChild(child);
+                    queue.add(child);
+                    visited.add(key);
+                }
+            }
+        }
+
+        return new ArrayList<>();
     }
 
-    public TreeNode getRoot() {
-        return root;
+    private static boolean bisaLewat(
+            int x,
+            int y,
+            int size,
+            ArrayList<Rectangle> walls,
+            ArrayList<Rectangle> enemies
+    ) {
+        Rectangle player = new Rectangle(x, y, size, size);
+
+        for (Rectangle wall : walls) {
+            if (player.intersects(wall)) {
+                return false;
+            }
+        }
+
+        for (Rectangle enemy : enemies) {
+            if (player.intersects(enemy)) {
+                return false;
+            }
+        }
+
+        return true;
     }
+    private static ArrayList<TreeNode> ambilPath(TreeNode node) {
+    ArrayList<TreeNode> path = new ArrayList<>();
+
+    while (node != null) {
+        path.add(node);
+        node = node.parent;
+    }
+
+    Collections.reverse(path);
+    return path;
 }
+
+    public static void tampilkanTreeJalur(ArrayList<TreeNode> path) {
+    System.out.println("=== GENERAL TREE JALUR TERCEPAT ===");
+
+    if (path.isEmpty()) {
+        System.out.println("Tidak ada jalan ke exit.");
+        return;
+    }
+
+    System.out.println("START");
+
+    for (int i = 0; i < path.size() - 1; i++) {
+        TreeNode current = path.get(i);
+        TreeNode next = path.get(i + 1);
+
+        System.out.println();
+        System.out.println(current.arah + " memiliki cabang:");
+
+        for (TreeNode child : current.children) {
+            if (child.x == next.x && child.y == next.y) {
+                System.out.println("├── " + child.arah + "  <-- DIPILIH");
+            } else {
+                System.out.println("├── " + child.arah);
+            }
+        }
+    }
+
+    System.out.println();
+    System.out.println("EXIT ditemukan");
+    System.out.println("Total langkah: " + (path.size() -1));
+}
+}
+
+
